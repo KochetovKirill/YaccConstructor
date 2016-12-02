@@ -2,7 +2,7 @@ NUGET
   remote: https://www.nuget.org/api/v2
     Argu (3.2)
     DotNet.Contracts (1.10.20606.1) - framework: >= net45
-    DotParser (1.0.6) - framework: >= net45
+    DotParser (1.0.6)
       FSharp.Core
       FSharpx.Collections.Experimental
     ExtCore (0.8.43)
@@ -46,7 +46,7 @@ NUGET
     NLog.Config (2.0.1.2) - framework: >= net40
       NLog (>= 2.0.1.2)
     NuGet.CommandLine (3.4.3)
-    NUnit (3.4.1)
+    NUnit (3.4.1) - framework: >= net40
     NUnit.ConsoleRunner (3.4.1)
     NUnit.Extension.NUnitProjectLoader (3.4.1)
     NUnit.Extension.NUnitV2Driver (3.4.1)

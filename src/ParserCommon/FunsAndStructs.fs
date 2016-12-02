@@ -9,6 +9,7 @@ open System.Collections.Generic
 [<Measure>] type nodeMeasure
 [<Measure>] type labelMeasure
 [<Measure>] type positionInInput
+[<Measure>] type stackMeasure
 [<Measure>] type state
 [<Measure>] type length
 [<Measure>] type leftPosition
@@ -57,18 +58,37 @@ type GSSVertexNFA =
     new (positionInInput, nonterm) = {PositionInInput = positionInInput; NontermState = nonterm}
 
 [<Struct>]
+type CallStackVertex =
+    val ReturnLabel : int
+    val Predecessor : int<stackMeasure>
+    new (label, pred) = {ReturnLabel = label; Predecessor = pred}
+
+    
+[<Struct>]
 type Context(*<'TokenType>*) =
     val Index         : int
     val Label         : int<labelMeasure>
     val Vertex        : Vertex
     val Ast           : int<nodeMeasure>
     val Probability   : float
+    val CurrentR      : int<nodeMeasure>
     val SLength       : int   
     //val Path          : List<ParserEdge<'TokenType*ref<bool>>>
     new (index, label, vertex, ast, prob, sLength) = {Index = index; Label = label; Vertex = vertex; Ast = ast; Probability = prob; SLength = sLength} // Path = List.empty<ParserEdge<'TokenType*ref<bool>>>
+    new (index, label, vertex, ast, curR) = {Index = index; Label = label; Vertex = vertex; Ast = ast; CurrentR = curR} // Path = List.empty<ParserEdge<'TokenType*ref<bool>>>
     new (index, label, vertex, ast) = {Index = index; Label = label; Vertex = vertex; Ast = ast; Probability = 1.0; SLength = 1}
     //new (index, label, vertex, ast, path) = {Index = index; Label = label; Vertex = vertex; Ast = ast; Path = path}
 
+[<Struct>]
+type ContextGFG =
+    val Index           : int
+    val Label           : int<labelMeasure>
+    val Vertex          : Vertex
+    val CallStackVertex : int<stackMeasure>
+    val Ast             : int<nodeMeasure>
+    new (index, label, vertex, csVertex, ast) = {Index = index; Label = label; Vertex = vertex; CallStackVertex = csVertex; Ast = ast}
+    
+    
 [<Struct>]
 [<System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential, Pack = 1)>]
 type Context2 =
@@ -219,10 +239,14 @@ type ParserStructures<'TokenType> (currentRule : int)=
             false
         //else true
 //CompressedArray<System.Collections.Generic.Dictionary<_, System.Collections.Generic.Dictionary<_, ResizeArray<_>>>>
+    let pushContext (inputVertex : int) (label : int<labelMeasure>) vertex ast curR =
+        setR.Enqueue(new Context(inputVertex, label, vertex, ast, curR))
+        
     let addContext (setU ) (inputVertex : int) (label : int<labelMeasure>) vertex ast =
+
         if not <| containsContext setU inputVertex label vertex ast
         then
-            setR.Enqueue(new Context(inputVertex, label, vertex, ast (*, currentPath*)))
+            setR.Enqueue(new Context(inputVertex, label, vertex, ast, dummy(*, currentPath*)))
 
     let containsEdge (dict1 : Dictionary<_, Dictionary<_, ResizeArray<_>>>) ast (e : Vertex) =
         if dict1 <> Unchecked.defaultof<_>
@@ -283,6 +307,8 @@ type ParserStructures<'TokenType> (currentRule : int)=
     member this.SetR = setR
     member this.SppfNodes = sppfNodes
     member this.DummyAST = dummyAST
+    member this.PushContext = pushContext
+    member this.ContainsContext = containsContext
     member this.AddContext = addContext
     member this.ContainsEdge = containsEdge
     member this.GetTreeExtension = getTreeExtension

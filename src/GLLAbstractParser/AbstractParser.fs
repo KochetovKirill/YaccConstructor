@@ -136,22 +136,21 @@ let buildAbstractAst<'TorenType> (parser : ParserSourceGLL<'TorenType>) (input :
                 num
                   
         let getNodeT (edge : ParserEdge<int>) =
-            let beginVertix = edge.Source
-            let endVertix = edge.Target
+            let beginVertex = edge.Source
+            let endVertex = edge.Target
             let tag = edge.Tag
             let i = tag - parser.NonTermCount
-            if terminalNodes.[beginVertix, endVertix, i] <> Unchecked.defaultof<int<nodeMeasure>>
+            if terminalNodes.[beginVertex, endVertex, i] <> Unchecked.defaultof<int<nodeMeasure>>
             then
-                terminalNodes.[beginVertix, endVertix, i]
+                terminalNodes.[beginVertex, endVertex, i]
             else
                 tokens.Add tag
-                let t = new TerminalNode(tokens.Length - 1, packExtension beginVertix endVertix)
+                let t = new TerminalNode(tokens.Length - 1, packExtension beginVertex endVertex)
                 sppfNodes.Add t
                 let res = sppfNodes.Length - 1
-                terminalNodes.[beginVertix, endVertix, i] <- ((sppfNodes.Length - 1)*1<nodeMeasure>)
+                terminalNodes.[beginVertex, endVertex, i] <- ((sppfNodes.Length - 1)*1<nodeMeasure>)
                 res * 1<nodeMeasure>
             
-                     
         let containsEdge (b : Vertex) (e : Vertex) ast =
             let labelN = slots.[int b.NontermLabel]
             let beginLevel = int b.Level
@@ -160,7 +159,6 @@ let buildAbstractAst<'TorenType> (parser : ParserSourceGLL<'TorenType>) (input :
             let cond, dict = structures.ContainsEdge dict1 ast e
             if dict.IsSome then edges.[labelN, beginLevel] <- dict.Value
             cond
-        
         
         let create (inputVertex : int) (label : int<labelMeasure>) (vertex : Vertex) (ast : int<nodeMeasure>) = 
             let v = new Vertex(inputVertex, int label)
@@ -220,7 +218,7 @@ let buildAbstractAst<'TorenType> (parser : ParserSourceGLL<'TorenType>) (input :
             condition := true
             let rule = getRule !structures.CurrentLabel
             let position = getPositionNew !structures.CurrentLabel
-            if Array.length parser.rules.[rule] = 0 
+            if Array.isEmpty parser.rules.[rule]
             then
               let t = new TerminalNode(-1, packExtension !currentVertexInInput !currentVertexInInput)
               sppfNodes.Add t
@@ -238,24 +236,24 @@ let buildAbstractAst<'TorenType> (parser : ParserSourceGLL<'TorenType>) (input :
                     then
                         let isEq (sym : int) (elem : ParserEdge<int>) = sym = elem.Tag
                         let curEdge = Seq.tryFind (isEq curSymbol) (input.OutEdges !currentVertexInInput)
-                        match curEdge with
-                        | Some edge ->
-                            let curToken = edge.Tag
-                            if curSymbol = curToken 
+
+                        for oe in input.OutEdges !currentVertexInInput do
+                            if isEq curSymbol oe
                             then
+                                let curToken = parser.TokenToNumber (oe.Tag)
+                                let newN = ref !structures.CurrentN
+                                let newR = ref !structures.CurrentR
+
                                 if !structures.CurrentN = structures.Dummy
-                                then 
-                                    structures.CurrentN := getNodeT edge
-                                    
-                                else 
-                                    structures.CurrentR := getNodeT edge
-                                currentVertexInInput := edge.Target
-                                structures.CurrentLabel := packLabelNew rule (position + 1)
-                                if !structures.CurrentR <> structures.Dummy
-                                then 
-                                    structures.CurrentN := structures.GetNodeP findSppfNode findSppfPackedNode structures.Dummy !structures.CurrentLabel !structures.CurrentN !structures.CurrentR
-                                condition := false
-                        | None _ -> ()
+                                then newN := getNodeT oe
+                                else newR := getNodeT oe
+
+                                let newVertexInInput = oe.Target
+                                let newLabel = packLabel rule (position + 1)
+                                if !newR <> structures.Dummy
+                                then newN := structures.GetNodeP findSppfNode findSppfPackedNode structures.Dummy newLabel !newN !newR
+
+                                structures.PushContext newVertexInInput newLabel !currentGSSNode !newN !newR
                     else 
                         let getIndex nTerm term = 
                             let mutable index = nTerm
@@ -263,17 +261,16 @@ let buildAbstractAst<'TorenType> (parser : ParserSourceGLL<'TorenType>) (input :
                             index <- index + term - parser.NonTermCount
                             index
                         currentGSSNode := create !currentVertexInInput (packLabelNew rule (position + 1)) !currentGSSNode  !structures.CurrentN
+
                         for edge in input.OutEdges !currentVertexInInput do
                             let curToken = edge.Tag
                             let index = getIndex curSymbol curToken
-                            let key =  int((int32 curSymbol <<< 16) ||| int32 (curToken - parser.NonTermCount  ))    
+                            let key =  int((int32 curSymbol <<< 16) ||| int32 (curToken - parser.NonTermCount))    
                             if table.ContainsKey key
                             then
                                 for rule in table.[key] do
-                                 
                                     let newLabel = packLabelNew rule 0
                                     structures.AddContext setU !currentVertexInInput newLabel !currentGSSNode structures.Dummy 
-                                    
                 else
                     let curRight =  sppfNodes.Item (int !structures.CurrentN) 
                     structures.FinalMatching
@@ -317,7 +314,13 @@ let buildAbstractAst<'TorenType> (parser : ParserSourceGLL<'TorenType>) (input :
                             let r1 = new Tree (tokens.ToArray(), res, parser.rules)
                     if true//checkConj res 
                     then        
-                            printf "%A" r1
+//                            setU |> Array.sumBy (fun s -> if s <> null 
+//                                                            then s.Values |> Seq.sumBy (fun s -> if s <> null 
+//                                                                                                   then s.Values |> Seq.sumBy (fun r -> if r <> null then r.Count else 0)
+//                                                                                                   else 0)
+//                                                            else 0)
+//                            |> printfn "%A" 
+                            //printf "%A" r1
                             //setU |> Seq.iter(fun x -> x |> Seq.iter (fun x -> printf "%A; " x.Value.Count))
                             //r1.AstToDot parser.NumToString parser.TokenToNumber parser.TokenData "AST123456.dot"
                             //let t = r1.GetPath 1
