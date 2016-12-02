@@ -69,14 +69,13 @@ type Context(*<'TokenType>*) =
     val Index         : int
     val Label         : int<labelMeasure>
     val Vertex        : Vertex
-    val Ast           : int<nodeMeasure>
-    val Probability   : float
+    val Ast           : int<nodeMeasure>    
     val CurrentR      : int<nodeMeasure>
-    val SLength       : int   
+    //val SLength       : int   
     //val Path          : List<ParserEdge<'TokenType*ref<bool>>>
-    new (index, label, vertex, ast, prob, sLength) = {Index = index; Label = label; Vertex = vertex; Ast = ast; Probability = prob; SLength = sLength} // Path = List.empty<ParserEdge<'TokenType*ref<bool>>>
+    //new (index, label, vertex, ast, prob, sLength) = {Index = index; Label = label; Vertex = vertex; Ast = ast} // Path = List.empty<ParserEdge<'TokenType*ref<bool>>>
     new (index, label, vertex, ast, curR) = {Index = index; Label = label; Vertex = vertex; Ast = ast; CurrentR = curR} // Path = List.empty<ParserEdge<'TokenType*ref<bool>>>
-    new (index, label, vertex, ast) = {Index = index; Label = label; Vertex = vertex; Ast = ast; Probability = 1.0; SLength = 1}
+    //new (index, label, vertex, ast) = {Index = index; Label = label; Vertex = vertex; Ast = ast}
     //new (index, label, vertex, ast, path) = {Index = index; Label = label; Vertex = vertex; Ast = ast; Path = path}
 
 [<Struct>]
